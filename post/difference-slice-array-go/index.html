@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <title>The (operative) difference between a slice and array</title>
+
+  <meta name="author" content="Preet Singh" />
+  
+  
+
+  <meta name="generator" content="Hugo 0.15" />
+
+  <link rel="alternate" href="http://randomcanary.github.io/index.xml" type="application/rss+xml" title="Random Canary">
+
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="http://randomcanary.github.io/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="http://randomcanary.github.io/css/main.css" />
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" />
+  <link rel="stylesheet" href="http://randomcanary.github.io/css/pygment_highlights.css" />
+  
+  
+  <meta property="og:title" content="The (operative) difference between a slice and array" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/" />
+  <meta property="og:image" content="image/fancygopher.jpg" />
+
+  <script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    
+    
+    
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+  
+</head>
+
+
+  <body>
+
+    <nav class="navbar navbar-default navbar-fixed-top navbar-custom">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="http://randomcanary.github.io/">Random Canary</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+          <li>
+          <a title="Blog" href="/">Blog</a>
+  	      </li>
+  	    
+      
+        
+          <li>
+          <a title="About" href="/page/about/">About</a>
+  	      </li>
+  	    
+      
+      </ul>
+    </div>
+
+	<div class="avatar-container">
+	  <div class="avatar-img-border">
+      
+          <a title="Random Canary" href="http://randomcanary.github.io/">
+              <img class="avatar-img" src="http://randomcanary.github.io/image/fancygopher.jpg" alt="Random Canary" />
+          </a>
+      
+	  </div>
+	</div>
+
+  </div>
+</nav>
+
+
+    <div role="main" class="container main-content">
+
+      
+        
+
+
+
+
+
+<header class="header-section ">
+
+<div class="intro-header no-img">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-heading">
+          <h1>The (operative) difference between a slice and array</h1>
+      
+      
+      
+      <span class="post-meta">Posted on August 7, 2015</span>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</header>
+
+
+
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <article role="main" class="blog-post">
+          
+
+<p>When I started with Go, I wondered where all the arrays went - all the examples used something called a <strong>slice</strong>. But Go certainly has data structures called arrays as well. Behind-the-scenes, both seem to be trivial variants of the traditional CS array data structure.</p>
+
+<h3 id="so-what-s-the-difference:0e39a580bf22d0e6878ed215ceefb767">So what&rsquo;s the difference?</h3>
+
+<p>Let&rsquo;s talk <strong>declaration</strong> first - A slice is declared as follows:</p>
+
+<div class="highlight"><pre><code class="language-go" data-lang="go"><span class="kd">var</span> <span class="nx">av</span> <span class="p">=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">}</span> <span class="c1">//# slice</span>
+
+<span class="kd">var</span> <span class="nx">bv</span> <span class="p">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">}</span> <span class="c1">//# array : has length in it&#39;s type</span>
+<span class="kd">var</span> <span class="nx">av</span> <span class="p">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">}</span> <span class="c1">//# array : has length in it&#39;s type, </span>
+<span class="c1">//#compiler translates this into &quot;var bv = [5]int{1,5,2,3,7}&quot;</span>
+</code></pre></div>
+
+
+<p>So what&rsquo;s the difference between a slice and an array at runtime?  It&rsquo;s simply, a slice is <strong><em>pass-by-reference</em></strong> of a traditional array, and an &lsquo;array&rsquo; in Go, is <strong><em>pass-by-value</em></strong> of a traditional array.</p>
+
+<p>Here&rsquo;s an example:</p>
+
+<p><div class="highlight"><pre><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nx">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">a</span> <span class="p">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">}</span> <span class="c1">//# Go array, so pass-by-value</span>
+	<span class="kd">var</span> <span class="nx">b</span> <span class="p">=</span> <span class="nx">a</span>
+	<span class="nx">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">=</span> <span class="mi">90</span>
+	<span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">a</span><span class="p">)</span>
+	
+<span class="p">}</span>
+</code></pre></div>
+</p>
+
+<p>gives us $[1, 5, 2, 3, 7]$</p>
+
+<p><div class="highlight"><pre><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nx">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">a</span> <span class="p">=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">}</span> <span class="c1">//# Go slice, so pass-by-reference</span>
+	<span class="kd">var</span> <span class="nx">b</span> <span class="p">=</span> <span class="nx">a</span>
+	<span class="nx">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">=</span> <span class="mi">90</span>
+	<span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">a</span><span class="p">)</span>
+	
+<span class="p">}</span>
+</code></pre></div>
+</p>
+
+<p>gives us $[1, 5, 90, 3, 7]$</p>
+
+<p>&mdash;***&mdash;-</p>
+
+<p>Q. Should I use a slice or an array, then?</p>
+
+<p>A. While both slices and arrays are variants of the traditional array, Go arrays incorporate their size into their type - i.e., they are of type <strong>$[5]int$</strong> if 5 is the size of the Go array. This definitely restricts how freely you can use them as a traditional array, which is why I&rsquo;d probably go for a slice, in the general case.</p>
+
+<p>References : As usual, <a href="http://stackoverflow.com/questions/11737053/go-lang-array-and-slice-data-types">Stack Overflow</a>.</p>
+
+      </article>
+
+      <ul class="pager blog-pager">
+        
+        <li class="previous">
+          <a href="http://randomcanary.github.io/post/2015-02-26-flake-it-till-you-make-it/" data-toggle="tooltip" data-placement="top" title="Flake it till you make it">&larr; Previous Post</a>
+        </li>
+        
+        
+        <li class="next">
+          <a href="http://randomcanary.github.io/post/2016-03-08-code-sample/" data-toggle="tooltip" data-placement="top" title="Code Sample">Next Post &rarr;</a>
+        </li>
+        
+      </ul>
+
+      
+
+    </div>
+  </div>
+</div>
+
+      
+
+      
+
+    </div>
+
+    <footer>
+  <div class="container beautiful-jekyll-footer">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <ul class="list-inline text-center footer-links">
+          
+          
+          <li>
+            <a href="https://github.com/randomcanary" title="GitHub">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+		      
+          <li>
+            <a href="https://twitter.com/singhdaddy" title="Twitter">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+		      
+		      
+	    	  
+
+    		  <li>
+      			<a href="http://randomcanary.github.io/index.xml" title="RSS">
+      			  <span class="fa-stack fa-lg">
+        				<i class="fa fa-circle fa-stack-2x"></i>
+        				<i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+      			  </span>
+      			</a>
+    		  </li>		
+
+        </ul>
+        <p class="copyright text-muted">
+    		  Preet Singh
+    		  &nbsp;&bull;&nbsp;
+    		  2016
+    		  
+    		  
+    		  &nbsp;&bull;&nbsp;
+    		  <a href="http://randomcanary.github.io/">Random Canary</a>
+    		  
+  	    </p>
+  	        
+    		<p class="theme-by text-muted">
+    		  Theme by
+    		  <a href="http://deanattali.com/beautiful-jekyll/">beautiful-jekyll</a>
+    		</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="http://randomcanary.github.io/js/jquery-1.11.2.min.js"></script>
+<script src="http://randomcanary.github.io/js/bootstrap.min.js"></script>
+<script src="http://randomcanary.github.io/js/main.js"></script>
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+
+  </body>
+</html>
