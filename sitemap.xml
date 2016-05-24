@@ -3,8 +3,13 @@
   
   <url>
     <loc>http://randomcanary.github.io/</loc>
-    <lastmod>2016-05-19T17:42:04+05:30</lastmod>
+    <lastmod>2016-05-24T19:00:21+05:30</lastmod>
     <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://randomcanary.github.io/post/distinct-elements-count-sketch/</loc>
+    <lastmod>2016-05-24T19:00:21+05:30</lastmod>
   </url>
   
   <url>

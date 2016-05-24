@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <title>The distinct-elements-count problem</title>
+
+  <meta name="author" content="Preet Singh" />
+  
+  
+
+  <meta name="generator" content="Hugo 0.15" />
+
+  <link rel="alternate" href="http://randomcanary.github.io/index.xml" type="application/rss+xml" title="Random Canary">
+
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="http://randomcanary.github.io/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="http://randomcanary.github.io/css/main.css" />
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" />
+  <link rel="stylesheet" href="http://randomcanary.github.io/css/pygment_highlights.css" />
+  
+  
+  <meta property="og:title" content="The distinct-elements-count problem" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/" />
+  <meta property="og:image" content="image/fancygopher.jpg" />
+
+  <script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    
+    
+    
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+  
+</head>
+
+
+  <body>
+
+    <nav class="navbar navbar-default navbar-fixed-top navbar-custom">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="http://randomcanary.github.io/">Random Canary</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+          <li>
+          <a title="Blog" href="/">Blog</a>
+  	      </li>
+  	    
+      
+        
+          <li>
+          <a title="About" href="/page/about/">About</a>
+  	      </li>
+  	    
+      
+      </ul>
+    </div>
+
+	<div class="avatar-container">
+	  <div class="avatar-img-border">
+      
+          <a title="Random Canary" href="http://randomcanary.github.io/">
+              <img class="avatar-img" src="http://randomcanary.github.io/image/fancygopher.jpg" alt="Random Canary" />
+          </a>
+      
+	  </div>
+	</div>
+
+  </div>
+</nav>
+
+
+    <div role="main" class="container main-content">
+
+      
+        
+
+
+
+
+  <div id="header-big-imgs" data-num-img=1 data-img-src-1="/image/count_count.png"></div>
+
+
+<header class="header-section has-img">
+
+<div class="big-img intro-header">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-heading">
+          <h1>The distinct-elements-count problem</h1>
+      
+        
+      <h2 class="post-subheading">And the FM sketching algorithm.</h2>
+      
+      
+      
+      
+      <span class="post-meta">Posted on May 24, 2016</span>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class='img-desc'></span>
+</div>
+
+<div class="intro-header no-img">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-heading">
+          <h1>The distinct-elements-count problem</h1>
+      
+        
+      <h2 class="post-subheading">And the FM sketching algorithm.</h2>
+      
+      
+      
+      
+      <span class="post-meta">Posted on May 24, 2016</span>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</header>
+
+
+
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <article role="main" class="blog-post">
+          
+
+<p>When I first started with the Twitter firehose, I was overwhelmed by the sheer volume of data I had to keep up with. Running real-time analytics on petabyte streams of data? Not going to happen. At least, not using what used to be standard algorithms. They just weren&rsquo;t performant enough anymore.</p>
+
+<p>The advent of Big Data has created has created a fresh set of problems where standard ML algorithmic solutions previously considered to be performant, just aren&rsquo;t anymore. <strong>Scalable Machine Learning</strong> studies such problems and their solutions.</p>
+
+<p>When you consider computing anything real-time on large data streams, linear run-time or space-time algorithms aren&rsquo;t fast or small enough anymore. This is where <strong>Sketching algorithms</strong> or <strong>sketches</strong> come in: These are approximation algorithms, either with sublinear run-time or space-time complexity, and whenever linear time is used, it&rsquo;s used frugally, such as just one or a just a few iterations over the input.</p>
+
+<p>I&rsquo;m going to describe a fundamental problem in streaming sketches - the <strong>distinct-elements-count problem</strong> - and a sketch that solves it.</p>
+
+<h2 id="the-problem:5e1acdb24ba3d154657f2be52cb6b7e2">The problem</h2>
+
+<p>Imagine if you have a stream or collection of elements as your input, with several repetitions.</p>
+
+<p>$inp = [2,3,5,4,3,2,3,3,3,3,2,2,2,1,1,1,5,5,4,4,1,1,1,2]$</p>
+
+<p>How would you count the number of <strong><em>unique</em></strong> or <strong><em>distinct</em></strong> elements?</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">count_distinct_elements</span><span class="p">(</span><span class="n">some_collection</span><span class="p">):</span>
+    <span class="n">freq_tbl</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">some_collection</span><span class="p">:</span>
+        <span class="n">freq_tbl</span><span class="p">[</span><span class="n">element</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">freq_tbl</span><span class="p">)</span>    
+
+<span class="n">inp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+<span class="k">print</span> <span class="n">count_distinct_elements</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+</code></pre></div>
+
+
+<pre><code>5
+</code></pre>
+
+<h4 id="in-golang:5e1acdb24ba3d154657f2be52cb6b7e2">(In Golang)</h4>
+
+<div class="highlight"><pre><code class="language-go" data-lang="go"><span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+    <span class="s">&quot;fmt&quot;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nx">count_distinct_elements</span><span class="p">(</span><span class="nx">collection</span> <span class="o">*</span><span class="p">[]</span><span class="kt">int</span><span class="p">)</span><span class="kt">int</span><span class="p">{</span>
+    <span class="nx">freq_tbl</span> <span class="o">:=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">int</span><span class="p">]</span><span class="kt">bool</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="nx">_</span><span class="p">,</span><span class="nx">val</span> <span class="o">:=</span> <span class="k">range</span> <span class="o">*</span><span class="nx">collection</span><span class="p">{</span>
+        <span class="nx">freq_tbl</span><span class="p">[</span><span class="nx">val</span><span class="p">]</span> <span class="p">=</span> <span class="kc">true</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nx">freq_tbl</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nx">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">inp</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">}</span>
+    <span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">count_distinct_elements</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">inp</span><span class="p">))</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+<p>There are numerous other ways, of course, but this solution is highly efficient. The time and space complexity are both $O(n)$ and are on the lower end of that class, since:</p>
+
+<p>We iterate through the input exactly once, and we occupy at most $n$ words of memory (where $n = len(input)$), plus $n$ bits (or bytes depending on the implementation in the programming language).</p>
+
+<h4 id="but-what-if-we-didn-t-have-enough-space-to-store-our-hash-table:5e1acdb24ba3d154657f2be52cb6b7e2">But what if we didn&rsquo;t have enough space to store our hash table?</h4>
+
+<p><strong>Side note:</strong> This isn&rsquo;t just an academic scenario - most real-time analytics solutions would need to implement sublinear algorithms almost by definition, otherwise just processing the input (which makes for at least linear time and perhaps space) would take too long to yield a &ldquo;real-time&rdquo; result.</p>
+
+<p>To get a good guess of the count of distinct elements, we employ the Flajolet, Martin, Durand, et al. set of algorithms - while these are multiple algorithms, my solution below is a generalized solution from multiple research papers, hereafter referred to just as the FM sketch.</p>
+
+<h3 id="the-fm-sketch:5e1acdb24ba3d154657f2be52cb6b7e2">The FM Sketch</h3>
+
+<p>for approximating the count of distinct elements is as follows:</p>
+
+<ul>
+<li>We iterate exactly once over the input collection.</li>
+<li>We hash each element with a good hash function (that yields a (close-to) random or uniform distribution of unique hashes).</li>
+<li>We look for a bit pattern in the hashes. We take advantage of our assumption that our hash function rocks to conclude certain patterns are more (or less) likely that others.</li>
+<li>We track the bit patterns with a special bit array or vector: A data structure that grows sublinearly in theory, but is usually a constant-sized data structure in implementation.</li>
+<li>We use that to make a guess about the count of unique elements.</li>
+<li>(Version 2) To improve the accuracy of our guess, we do this multiple times over random subsets of the input collection, and take the average.</li>
+</ul>
+
+<p>The sketch has two primary intuitions that take a while to understand (though the implementation can be surprisingly short):</p>
+
+<h3 id="intuition-1-bit-patterns:5e1acdb24ba3d154657f2be52cb6b7e2">Intuition 1: Bit Patterns</h3>
+
+<p>A (good) hash function will generate (binary) numbers from the elements of the inputed collection. Imagine you had this really dense group of binary numbers - say, 00000, 11111, and everything in between: If you select any number in that group, how likely are you to see a 1 in the last (least significant bit) place?</p>
+
+<p>That&rsquo;s easy - a 1 in the last place indicates an odd number, which is going to be half of the group, so the probability is 0.5 . And 1 in the place next to that (the value=2 place)? It&rsquo;s going to be half of group numbers that are 2 apart, or about a fourth of the group, yielding a probability of 0.25 . Sit with a pen and paper for about fifteen minutes, and you&rsquo;ll figure out that moving from right to left (least significant bit to most), the probability of a 1 in each place is $2^{-i - 1}$ where $i$ is the 0th place, 1st place and so on.</p>
+
+<p>You don&rsquo;t even to go that far - even without any computation it&rsquo;s trivial to see that the further right you are, the more common a 1 will be. In other words, even without a truly random function or a dense input, we can see that the probability of seeing a 1 in any given group number decreases as you move from right to left (in a traditional Big Endian format). And that&rsquo;s enough to understand why this sketch works.</p>
+
+<p>The group of course, is the group of numbers generated by our hash function over the inputed collection.</p>
+
+<h3 id="the-fm-sketch-again-with-a-little-more-detail:5e1acdb24ba3d154657f2be52cb6b7e2">The FM Sketch again, with a little more detail.</h3>
+
+<ul>
+<li>We iterate exactly once over the input collection.</li>
+<li>We hash each element with a good hash function (that yields a (close-to) random or uniform distribution of unique hashes).</li>
+<li>We look for a bit pattern in the hashes. <strong>Specifically, we look for the least significant one - the first 1 we see when moving right to left (in Big Endian format - from least significant bit to most significant bit ).</strong></li>
+<li>We track the bit patterns with a special bit array. <strong>The bit array is nothing but a 64-bit long array of booleans (or 1s | 0s). For every hashed element, we note the index of the least significant one, and set that box in our bit array to True (or 1). The idea is, the small-index bits will be &lsquo;hit&rsquo; (set to True) several times, this decreases for greater-index bits, until, in a perfect world, we get a bit that&rsquo;s hit just once, and the bit that has the very next index that&rsquo;s greater is (in fact, all the bits that have greater indices are) False.</strong></li>
+<li>We use that to make a guess about the count of unique elements. <strong>We get the (index of the) first bit that&rsquo;s False, raise it to base 2, and we have an approximation of the count of distinct elements.</strong></li>
+</ul>
+
+<p><strong>Side note: The thing is, we&rsquo;re not going to get a perfect hash function or a perfectly dense input. But it&rsquo;ll <em>kind</em> of work this way. The bit array we&rsquo;ll end up having is close to what I&rsquo;ve described above, but we&rsquo;ll probably have a bunch of gaps. We&rsquo;ll see a bunch of ones in the smaller-indices, and a group of zeroes towards the end of the array, and scattered values in between.
+We have a choice, then. (i) We can select the first 0 (or False) value in our bit array to be (the exponent of) our bound. This is what I&rsquo;ve done. Or, (ii) we can select the greatest True value (which I think, was what Durand selected in his algorithm). There&rsquo;s a corrective constant Phi = 0.77351, which the algorithms&rsquo; authors have used to shade the estimate upwards or downwards. If you&rsquo;re selecting the first False value, we shade upwards by dividing by Phi. If you select the greatest True value, we shade our estimate downwards by multiplying by Phi.</strong></p>
+
+<ul>
+<li>(Version 2) To improve the accuracy of our guess, we do this multiple times over random subsets of the input collection, and take the average.</li>
+</ul>
+
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">def</span> <span class="nf">least_sig_one</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">32</span>
+    <span class="n">place</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;&gt;</span> <span class="n">place</span> <span class="o">&amp;</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">place</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">place</span>
+
+<span class="k">def</span> <span class="nf">estimate_distinct_elements</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+    <span class="n">bit_array</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="n">bit_array</span><span class="p">[</span><span class="n">least_sig_one</span><span class="p">(</span><span class="n">h</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span> 
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">bit_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">phi</span> <span class="o">=</span> <span class="mf">0.77351</span>
+            <span class="n">estimate</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="n">i</span> <span class="c"># the distinct-elements-count estimate</span>
+            <span class="k">return</span> <span class="n">estimate</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">i</span>
+        
+<span class="n">inp</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100000</span><span class="p">)]</span>        
+
+<span class="k">print</span> <span class="s">&quot;Actual count of distinct elements is {}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">count_distinct_elements</span><span class="p">(</span><span class="n">inp</span><span class="p">))</span>
+<span class="n">estimate</span><span class="p">,</span> <span class="n">exponent_of_bound</span><span class="p">,</span> <span class="n">unshaded</span> <span class="o">=</span> <span class="n">estimate_distinct_elements</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>    
+<span class="k">print</span> <span class="s">&quot;Estimate of distinct elements is {}, the exponent of the bound is {}, the unshaded estimate is {}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">estimate</span><span class="p">,</span> <span class="n">exponent_of_bound</span><span class="p">,</span> <span class="n">unshaded</span><span class="p">)</span>
+</code></pre></div>
+</p>
+
+<pre><code>Actual count of distinct elements is 100000.
+Estimate of distinct elements is 84725.4721982, the exponent of the bound is 16, the unshaded estimate is 65536.
+</code></pre>
+
+<h3 id="intuition-2-stochastic-averaging-or-as-i-like-to-call-it-mean-of-multiple-random-input-subsets:5e1acdb24ba3d154657f2be52cb6b7e2">Intuition 2: Stochastic Averaging (Or as I like to call it, Mean of multiple random input-subsets)</h3>
+
+<p>We can implement a number of tweaks that improve the accuracy of our guess. For instance, we could run the input with multiple (mutually independent) hash functions, and take the average. This, however, is computationally expensive, and the entire point of a sketch is it&rsquo;s supposed to be computationally frugal. Also, I&rsquo;m guessing it&rsquo;s hard to find a bunch of hash functions that have good properties, but are fairly far apart from each other.</p>
+
+<p>Here&rsquo;s another tweak: We run the sketch multiple times over random subsets of the input collection, and take the average. In some circles, this is referred to (rather non-intuitively) as <strong><em>stochastic averaging</em></strong>.</p>
+
+<p>Again, selecting random subsets might be expensive, since we need to run random functions again. But, we&rsquo;ve already run a (close-to random) hash function over the input, so we use that.</p>
+
+<p>Here&rsquo;s the steps in mean-of-multiple-random-input subsets:</p>
+
+<ul>
+<li>Our input is now the collection of elements as well as <strong>m</strong> - the number of subsets. I&rsquo;m guessing accuracy rises with number of subsets upto a certain point, after which it falls.</li>
+<li>We create an array of m bit arrays or vectors.</li>
+<li>To decide which bit array to toss each hashed element in, we look at the last (least significant) <em>log m</em> bits. For example, if m is 8, we decide to look at the last 3 bits, which will have values ranging from 000 to 111, indicating the corresponding bit array. <strong>Side note: m is always a power of 2, so there&rsquo;s a bit array (or subset) for every possible hash.</strong> This is a cute trick that ensures we have (close-to) random allocation of elements among m subsets.</li>
+<li>The remaining bits we treat as we would in the regular sketching algorithm: We check for the least significant one, and set that bit in the bit vector.</li>
+<li>We check the least significant bit that&rsquo;s a zero or False, for all bit vectors, and take the average (called the <strong><em>mean_exponent</em></strong> in the code below). Alternatively we can check for the most significant bit that&rsquo;s set to 1, in which case we&rsquo;ll have to shade downwards in the final computation (by multiplying by Phi).</li>
+<li>We return the estimate, which is 2 raised to the mean exponent, with one small change for the random subset method - the estimate is shaded upwards by multiplying by (m/Phi) rather than (1/Phi).<br /></li>
+</ul>
+
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">estimate_distinct_elements_2</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span> <span class="c"># m is a power of 2</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">bitvector_table</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)]</span>
+    <span class="n">num_bits_for_bucketing</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">bin</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">-</span><span class="mi">1</span>  <span class="c"># num. of bits required for giving the bucket number. </span>
+    <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="n">bucket_num</span> <span class="o">=</span> <span class="n">h</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">m</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>  
+        <span class="n">bitvector_position</span> <span class="o">=</span> <span class="n">least_sig_one</span><span class="p">(</span><span class="n">h</span> <span class="o">&gt;&gt;</span> <span class="n">num_bits_for_bucketing</span><span class="p">)</span>
+        <span class="n">bitvector_table</span><span class="p">[</span><span class="n">bucket_num</span><span class="p">][</span><span class="n">bitvector_position</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="mf">0.77351</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bit_array</span> <span class="ow">in</span> <span class="n">bitvector_table</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">bit_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">break</span>
+    <span class="n">mean_exponent</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">temp</span><span class="p">))</span><span class="o">/</span><span class="n">m</span>
+    <span class="k">return</span>  <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">mean_exponent</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">m</span> <span class="o">/</span> <span class="n">phi</span><span class="p">)</span>
+
+<span class="n">inp</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100000</span><span class="p">)]</span>        
+
+<span class="k">print</span> <span class="s">&quot;Actual count of distinct elements is {}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">count_distinct_elements</span><span class="p">(</span><span class="n">inp</span><span class="p">))</span>  
+<span class="k">print</span> <span class="s">&quot;Estimate of distinct elements is {}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">estimate_distinct_elements_2</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="mi">1024</span><span class="p">))</span>
+</code></pre></div>
+</p>
+
+<pre><code>Actual count of distinct elements is 100000.
+Estimate of distinct elements is 102198.604015.
+</code></pre>
+
+<p>The estimate now is off by barely a few percent, and I&rsquo;m content.</p>
+
+<h3 id="other-notes:5e1acdb24ba3d154657f2be52cb6b7e2">Other Notes:</h3>
+
+<p>Golang afficianados who like to delve in the source code will recognize the bucketing trick (where you look at the last <em>log m</em> bits to decide where (which bucket) to toss a given element in: It&rsquo;s exactly the same technique used in the implementation of Golang&rsquo;s <a href="https://golang.org/src/runtime/hashmap.go">map</a> data structure.</p>
+
+      </article>
+
+      <ul class="pager blog-pager">
+        
+        <li class="previous">
+          <a href="http://randomcanary.github.io/post/ive_moved/" data-toggle="tooltip" data-placement="top" title="I&#39;ve moved.">&larr; Previous Post</a>
+        </li>
+        
+        
+      </ul>
+
+      
+
+    </div>
+  </div>
+</div>
+
+      
+
+      
+
+    </div>
+
+    <footer>
+  <div class="container beautiful-jekyll-footer">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <ul class="list-inline text-center footer-links">
+          
+          
+          <li>
+            <a href="https://github.com/randomcanary" title="GitHub">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+		      
+          <li>
+            <a href="https://twitter.com/singhdaddy" title="Twitter">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+		      
+		      
+	    	  
+
+    		  <li>
+      			<a href="http://randomcanary.github.io/index.xml" title="RSS">
+      			  <span class="fa-stack fa-lg">
+        				<i class="fa fa-circle fa-stack-2x"></i>
+        				<i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+      			  </span>
+      			</a>
+    		  </li>		
+
+        </ul>
+        <p class="copyright text-muted">
+    		  Preet Singh
+    		  &nbsp;&bull;&nbsp;
+    		  2016
+    		  
+    		  
+    		  &nbsp;&bull;&nbsp;
+    		  <a href="http://randomcanary.github.io/">Random Canary</a>
+    		  
+  	    </p>
+  	        
+    		<p class="theme-by text-muted">
+    		  Theme by
+    		  <a href="http://deanattali.com/beautiful-jekyll/">beautiful-jekyll</a>
+    		</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="http://randomcanary.github.io/js/jquery-1.11.2.min.js"></script>
+<script src="http://randomcanary.github.io/js/bootstrap.min.js"></script>
+<script src="http://randomcanary.github.io/js/main.js"></script>
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+
+  </body>
+</html>
